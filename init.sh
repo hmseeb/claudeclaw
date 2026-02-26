@@ -42,7 +42,7 @@ fi
 TZ_NAME="${TIMEZONE:-UTC}"
 
 # --- Model ---
-MODEL="${CLAUDECLAW_MODEL:-opus}"
+MODEL="${CLAUDECLAW_MODEL:-sonnet}"
 
 # --- Security ---
 SECURITY="${CLAUDECLAW_SECURITY:-moderate}"
