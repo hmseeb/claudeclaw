@@ -32,6 +32,11 @@ RUN git clone --depth 1 https://github.com/moazbuilds/claudeclaw.git /tmp/claude
 # Patch: send actual error text to Telegram instead of generic "Unknown error"
 RUN sed -i 's/result\.stderr || "Unknown error"/result.stdout || result.stderr || "Unknown error"/' src/commands/telegram.ts
 
+# Patch: work around Bun mkdir EEXIST bug with symlinked dirs (oven-sh/bun#16466)
+# Bun's mkdir({recursive:true}) throws EEXIST on symlinks to existing directories
+RUN sed -i 's/await mkdir(\([^)]*\), { recursive: true });/await mkdir(\1, { recursive: true }).catch((e) => { if (e.code !== "EEXIST") throw e; });/g' \
+    src/config.ts src/commands/start.ts src/runner.ts
+
 # Patch: add 5-minute timeout to Claude process to prevent infinite hangs
 RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer = setTimeout(() => { try { proc.kill(); } catch(e) {} }, 300000); const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
     && sed -i 's/await proc\.exited;/await proc.exited; clearTimeout(_killTimer);/' src/runner.ts
