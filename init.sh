@@ -12,18 +12,8 @@ set -e
 STATE_DIR="/app/.claude/claudeclaw"
 JOBS_DIR="$STATE_DIR/jobs"
 LOGS_DIR="$STATE_DIR/logs"
-CRED_DIR="$HOME/.claude"
 
-mkdir -p "$STATE_DIR" "$JOBS_DIR" "$LOGS_DIR" "$CRED_DIR"
-
-# --- OAuth credentials ---
-# CLAUDE_CREDENTIALS env var = full JSON from ~/.claude/.credentials.json
-if [ -n "$CLAUDE_CREDENTIALS" ]; then
-  echo "$CLAUDE_CREDENTIALS" > "$CRED_DIR/.credentials.json"
-  echo "[init] OAuth credentials written"
-else
-  echo "[init] WARNING: CLAUDE_CREDENTIALS not set — auth will fail"
-fi
+mkdir -p "$STATE_DIR" "$JOBS_DIR" "$LOGS_DIR" "$HOME/.claude"
 
 # --- Railway port ---
 # Railway injects PORT. ClaudeClaw web UI must bind 0.0.0.0:$PORT
@@ -102,6 +92,33 @@ if [ -d "/data" ]; then
   rm -rf "$STATE_DIR"
   ln -sf "/data/claudeclaw" "$STATE_DIR"
   echo "[init] Persistent storage linked: /data/claudeclaw -> $STATE_DIR"
+
+  # Persist Claude Code home dir (conversation sessions live here)
+  # Without this, --resume fails after redeploy because session data is gone
+  CLAUDE_HOME="$HOME/.claude"
+  CLAUDE_HOME_VOL="/data/claude-home"
+  mkdir -p "$CLAUDE_HOME_VOL"
+  # First run: copy existing Claude home to volume
+  if [ ! -f "$CLAUDE_HOME_VOL/.initialized" ]; then
+    cp -r "$CLAUDE_HOME/." "$CLAUDE_HOME_VOL/" 2>/dev/null || true
+    touch "$CLAUDE_HOME_VOL/.initialized"
+  fi
+  # Replace home .claude with symlink to volume
+  rm -rf "$CLAUDE_HOME"
+  ln -sf "$CLAUDE_HOME_VOL" "$CLAUDE_HOME"
+  echo "[init] Persistent storage linked: $CLAUDE_HOME_VOL -> $CLAUDE_HOME"
+fi
+
+# --- OAuth credentials ---
+# Written AFTER volume symlinks so credentials land on persistent storage
+# CLAUDE_CREDENTIALS env var = full JSON from ~/.claude/.credentials.json
+CRED_DIR="$HOME/.claude"
+mkdir -p "$CRED_DIR"
+if [ -n "$CLAUDE_CREDENTIALS" ]; then
+  echo "$CLAUDE_CREDENTIALS" > "$CRED_DIR/.credentials.json"
+  echo "[init] OAuth credentials written"
+else
+  echo "[init] WARNING: CLAUDE_CREDENTIALS not set — auth will fail"
 fi
 
 echo "[init] Starting ClaudeClaw daemon..."
