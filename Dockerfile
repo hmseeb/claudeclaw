@@ -14,7 +14,9 @@ RUN npm install -g @anthropic-ai/claude-code
 ENV DISABLE_AUTOUPDATER=1
 
 # Create non-root user (Claude Code refuses --dangerously-skip-permissions as root)
-RUN useradd -m -s /bin/bash claw
+# Grant passwordless sudo for runtime volume ownership fixes
+RUN useradd -m -s /bin/bash claw \
+    && echo "claw ALL=(ALL) NOPASSWD: /bin/mkdir, /bin/chown" >> /etc/sudoers.d/claw
 
 # Set working directory — ClaudeClaw uses process.cwd()/.claude/ for all state
 WORKDIR /app

@@ -102,7 +102,9 @@ if [ -d "/data" ]; then
   # Without this, --resume fails after redeploy because session data is gone
   CLAUDE_HOME="$HOME/.claude"
   CLAUDE_HOME_VOL="/data/claude-home"
-  mkdir -p "$CLAUDE_HOME_VOL"
+  # Volume is root-owned at runtime; use sudo to create and chown
+  sudo mkdir -p "$CLAUDE_HOME_VOL"
+  sudo chown -R "$(id -u):$(id -g)" "$CLAUDE_HOME_VOL"
   # First run: copy existing Claude home to volume
   if [ ! -f "$CLAUDE_HOME_VOL/.initialized" ]; then
     cp -r "$CLAUDE_HOME/." "$CLAUDE_HOME_VOL/" 2>/dev/null || true
