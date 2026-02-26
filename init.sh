@@ -89,9 +89,14 @@ fi
 # --- Symlink volume state if using persistent storage ---
 # If /data exists (Railway volume), use it for logs and session persistence
 if [ -d "/data" ]; then
-  # Move existing state to volume on first run
-  if [ ! -d "/data/claudeclaw" ]; then
-    cp -r "$STATE_DIR" "/data/claudeclaw" 2>/dev/null || true
+  # Ensure all dirs exist directly on the volume BEFORE symlinking.
+  # Bun's mkdir cannot create dirs through symlinks (oven-sh/bun#16466).
+  sudo mkdir -p /data/claudeclaw/jobs /data/claudeclaw/logs /data/claudeclaw/inbox/telegram
+  sudo chown -R "$(id -u):$(id -g)" /data/claudeclaw
+  # First run: copy settings/state to volume
+  if [ ! -f "/data/claudeclaw/.initialized" ]; then
+    cp -r "$STATE_DIR/." "/data/claudeclaw/" 2>/dev/null || true
+    touch "/data/claudeclaw/.initialized"
   fi
   # Symlink so ClaudeClaw reads/writes to the volume
   rm -rf "$STATE_DIR"
