@@ -38,8 +38,9 @@ RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer 
 COPY init.sh .
 RUN chmod +x init.sh
 
-# Give claw user ownership of /app and its home .claude dir
-RUN chown -R claw:claw /app /home/claw
+# Pre-create /data for Railway volume mount and give claw ownership
+# Railway mounts the volume here at runtime; pre-creating ensures correct perms
+RUN mkdir -p /data && chown -R claw:claw /app /home/claw /data
 
 USER claw
 ENV HOME=/home/claw
