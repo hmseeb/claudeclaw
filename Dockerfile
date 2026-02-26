@@ -30,6 +30,10 @@ RUN git clone --depth 1 https://github.com/moazbuilds/claudeclaw.git /tmp/claude
 # Patch: send actual error text to Telegram instead of generic "Unknown error"
 RUN sed -i 's/result\.stderr || "Unknown error"/result.stdout || result.stderr || "Unknown error"/' src/commands/telegram.ts
 
+# Patch: add 5-minute timeout to Claude process to prevent infinite hangs
+RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer = setTimeout(() => { try { proc.kill(); } catch(e) {} }, 300000); const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
+    && sed -i 's/await proc\.exited;/await proc.exited; clearTimeout(_killTimer);/' src/runner.ts
+
 # Copy deployment files (init.sh, .dockerignore, etc.)
 COPY init.sh .
 RUN chmod +x init.sh
