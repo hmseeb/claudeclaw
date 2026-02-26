@@ -13,6 +13,11 @@ STATE_DIR="/app/.claude/claudeclaw"
 JOBS_DIR="$STATE_DIR/jobs"
 LOGS_DIR="$STATE_DIR/logs"
 
+# Clean up stale symlinks from previous deploys before creating dirs
+# (mkdir -p fails if path is a broken symlink)
+[ -L "$STATE_DIR" ] && rm -f "$STATE_DIR"
+[ -L "$HOME/.claude" ] && rm -f "$HOME/.claude"
+
 mkdir -p "$STATE_DIR" "$JOBS_DIR" "$LOGS_DIR" "$HOME/.claude"
 
 # --- Railway port ---
