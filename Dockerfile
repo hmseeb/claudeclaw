@@ -27,6 +27,9 @@ RUN git clone --depth 1 https://github.com/moazbuilds/claudeclaw.git /tmp/claude
     && rm -rf /tmp/claudeclaw \
     && bun install --production
 
+# Patch: send actual error text to Telegram instead of generic "Unknown error"
+RUN sed -i 's/result\.stderr || "Unknown error"/result.stdout || result.stderr || "Unknown error"/' src/commands/telegram.ts
+
 # Copy deployment files (init.sh, .dockerignore, etc.)
 COPY init.sh .
 RUN chmod +x init.sh
