@@ -127,6 +127,9 @@ fi
 # Generate it locally with: claude setup-token
 # Also write the onboarding flag so Claude skips interactive prompts.
 if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+  # Strip newlines/whitespace that may sneak in from copy-paste
+  CLAUDE_CODE_OAUTH_TOKEN="$(echo "$CLAUDE_CODE_OAUTH_TOKEN" | tr -d '[:space:]')"
+  export CLAUDE_CODE_OAUTH_TOKEN
   echo '{"hasCompletedOnboarding": true}' > "$HOME/.claude.json"
   echo "[init] OAuth token detected, onboarding bypass written"
 else
