@@ -37,8 +37,9 @@ RUN sed -i 's/result\.stderr || "Unknown error"/result.stdout || result.stderr |
 RUN sed -i 's/await mkdir(\([^)]*\), { recursive: true });/await mkdir(\1, { recursive: true }).catch((e) => { if (e.code !== "EEXIST") throw e; });/g' \
     src/config.ts src/commands/start.ts src/runner.ts
 
-# Patch: add 5-minute timeout to Claude process to prevent infinite hangs
-RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer = setTimeout(() => { try { proc.kill(); } catch(e) {} }, 300000); const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
+# Patch: add configurable timeout to Claude process to prevent infinite hangs
+# CLAUDE_PROCESS_TIMEOUT env var sets timeout in ms (default: 600000 = 10 minutes)
+RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer = setTimeout(() => { try { proc.kill(); } catch(e) {} }, Number(process.env.CLAUDE_PROCESS_TIMEOUT) || 600000); const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
     && sed -i 's/await proc\.exited;/await proc.exited; clearTimeout(_killTimer);/' src/runner.ts
 
 # Copy deployment files (init.sh, .dockerignore, etc.)
