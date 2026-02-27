@@ -39,8 +39,8 @@ RUN sed -i 's/await mkdir(\([^)]*\), { recursive: true });/await mkdir(\1, { rec
 
 # Patch: add configurable timeout to Claude process to prevent infinite hangs
 # CLAUDE_PROCESS_TIMEOUT env var sets timeout in ms (default: 600000 = 10 minutes)
-RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _killTimer = setTimeout(() => { try { proc.kill(); } catch(e) {} }, Number(process.env.CLAUDE_PROCESS_TIMEOUT) || 600000); const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
-    && sed -i 's/await proc\.exited;/await proc.exited; clearTimeout(_killTimer);/' src/runner.ts
+RUN sed -i 's/const \[rawStdout, stderr\] = await Promise\.all/const _ptimeout = process.env.CLAUDE_PROCESS_TIMEOUT !== undefined ? Number(process.env.CLAUDE_PROCESS_TIMEOUT) : 600000; const _killTimer = _ptimeout > 0 ? setTimeout(() => { try { proc.kill(); } catch(e) {} }, _ptimeout) : null; const [rawStdout, stderr] = await Promise.all/' src/runner.ts \
+    && sed -i 's/await proc\.exited;/await proc.exited; if (_killTimer) clearTimeout(_killTimer);/' src/runner.ts
 
 # Copy deployment files (init.sh, .dockerignore, etc.)
 COPY init.sh .
