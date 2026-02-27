@@ -6,7 +6,8 @@ set -e
 # -------------------------------------------------------------------
 # Paths: ClaudeClaw resolves everything from process.cwd()/.claude/
 # so /app/.claude/ is the daemon state directory.
-# Claude Code credentials live at $HOME/.claude/.credentials.json
+# Claude Code authenticates via CLAUDE_CODE_OAUTH_TOKEN env var
+# (generated locally with: claude setup-token)
 # -------------------------------------------------------------------
 
 STATE_DIR="/app/.claude/claudeclaw"
@@ -121,16 +122,15 @@ if [ -d "/data" ]; then
   echo "[init] Persistent storage linked: $CLAUDE_HOME_VOL -> $CLAUDE_HOME"
 fi
 
-# --- OAuth credentials ---
-# Written AFTER volume symlinks so credentials land on persistent storage
-# CLAUDE_CREDENTIALS env var = full JSON from ~/.claude/.credentials.json
-CRED_DIR="$HOME/.claude"
-mkdir -p "$CRED_DIR"
-if [ -n "$CLAUDE_CREDENTIALS" ]; then
-  echo "$CLAUDE_CREDENTIALS" > "$CRED_DIR/.credentials.json"
-  echo "[init] OAuth credentials written"
+# --- Authentication ---
+# CLAUDE_CODE_OAUTH_TOKEN is read directly by Claude Code from the env.
+# Generate it locally with: claude setup-token
+# Also write the onboarding flag so Claude skips interactive prompts.
+if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+  echo '{"hasCompletedOnboarding": true}' > "$HOME/.claude.json"
+  echo "[init] OAuth token detected, onboarding bypass written"
 else
-  echo "[init] WARNING: CLAUDE_CREDENTIALS not set — auth will fail"
+  echo "[init] WARNING: CLAUDE_CODE_OAUTH_TOKEN not set — auth will fail"
 fi
 
 echo "[init] Starting ClaudeClaw daemon..."
