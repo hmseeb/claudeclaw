@@ -120,6 +120,12 @@ if [ -d "/data" ]; then
   rm -rf "$CLAUDE_HOME"
   ln -sf "$CLAUDE_HOME_VOL" "$CLAUDE_HOME"
   echo "[init] Persistent storage linked: $CLAUDE_HOME_VOL -> $CLAUDE_HOME"
+
+  # Put TMPDIR on the same volume so plugin installs (rename from /tmp)
+  # don't fail with EXDEV (cross-device link not permitted)
+  sudo mkdir -p /data/tmp
+  sudo chown "$(id -u):$(id -g)" /data/tmp
+  export TMPDIR=/data/tmp
 fi
 
 # --- Authentication ---
