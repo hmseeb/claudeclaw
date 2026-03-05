@@ -1,10 +1,11 @@
 FROM oven/bun:1-debian
 
-# Install Node.js 22 (required for Claude Code CLI), git, and system deps
+# Install system deps + Node.js 22 (required for Claude Code CLI)
+# Use official Node.js binary instead of nodesource (which breaks intermittently)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git ca-certificates sudo \
-    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
+    curl git ca-certificates sudo xz-utils \
+    && curl -fsSL https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.xz \
+       | tar -xJ -C /usr/local --strip-components=1 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code CLI globally
